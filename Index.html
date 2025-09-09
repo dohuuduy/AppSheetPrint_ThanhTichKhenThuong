@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Khen Thưởng</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .form-header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #333;
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .form-subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .form-content {
+            padding: 30px;
+        }
+
+        .form-row {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .form-label {
+            font-weight: bold;
+            min-width: 180px;
+            margin-right: 10px;
+        }
+
+        .form-value {
+            flex: 1;
+            border-bottom: 1px dotted #333;
+            padding-bottom: 2px;
+            min-height: 20px;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .signature-date {
+            font-style: italic;
+            margin-bottom: 60px;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+        }
+
+        .buttons {
+            text-align: center;
+            margin: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-top: 1px solid #ddd;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #28a745;
+        }
+
+        .btn-secondary:hover {
+            background: #1e7e34;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                margin: 0;
+                max-width: none;
+            }
+            .buttons {
+                display: none;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-header">
+            <div class="form-title">Phiếu Khen Thưởng</div>
+            <div class="form-subtitle">Biểu mẫu ghi nhận thành tích</div>
+        </div>
+
+        <div class="form-content" id="formContent">
+            <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn" onclick="printForm()">
+                🖨️ In Phiếu
+            </button>
+            <button class="btn btn-secondary" onclick="exportPDF()">
+                📄 Xuất PDF
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Lấy dữ liệu từ URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const data = {};
+            
+            // Danh sách các tham số cần lấy
+            const fields = [
+                'id',
+                'linh_vuc',
+                'so_quyet_dinh',
+                'ngay_quyet_dinh',
+                'nguoi_ky_quyet_dinh',
+                'cap_khen_thuong',
+                'thanh_tich',
+                'loai_doi_tuong',
+                'nguoi_duoc_khen_thuong',
+                'hinh_thuc_khen_thuong',
+                'nam',
+                'thang'
+            ];
+
+            fields.forEach(field => {
+                const value = params.get(field);
+                if (value) {
+                    data[field] = decodeURIComponent(value);
+                }
+            });
+
+            return data;
+        }
+
+        // Format ngày tháng
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            
+            return `${day}/${month}/${year}`;
+        }
+
+        // Hiển thị form với dữ liệu
+        function displayForm(data) {
+            const formContent = document.getElementById('formContent');
+            
+            if (Object.keys(data).length === 0) {
+                formContent.innerHTML = `
+                    <div class="error">
+                        <strong>Lỗi:</strong> Không có dữ liệu để hiển thị. 
+                        <br>Vui lòng truyền dữ liệu qua URL parameters.
+                        <br><br>
+                        <strong>Ví dụ:</strong><br>
+                        <code>?id=123&nguoi_duoc_khen_thuong=Nguyễn Văn A&thanh_tich=Hoàn thành xuất sắc nhiệm vụ</code>
+                    </div>
+                `;
+                return;
+            }
+
+            const currentDate = new Date();
+            const formattedDate = `Ngày ${currentDate.getDate()} tháng ${currentDate.getMonth() + 1} năm ${currentDate.getFullYear()}`;
+
+            formContent.innerHTML = `
+                <div class="form-row">
+                    <span class="form-label">ID Lĩnh vực:</span>
+                    <span class="form-value">${data.idlinh_vuc || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Số quyết định:</span>
+                    <span class="form-value">${data.so_quyet_dinh || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Ngày quyết định:</span>
+                    <span class="form-value">${formatDate(data.ngay_quyet_dinh)}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Người ký quyết định:</span>
+                    <span class="form-value">${data.nguoi_ky_quyet_dinh || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Cấp khen thưởng:</span>
+                    <span class="form-value">${data.cap_khen_thuong || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Thành tích:</span>
+                    <span class="form-value">${data.thanh_tich || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Loại đối tượng:</span>
+                    <span class="form-value">${data.loai_doi_tuong || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Người được khen thưởng:</span>
+                    <span class="form-value">${data.nguoi_duoc_khen_thuong || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Hình thức khen thưởng:</span>
+                    <span class="form-value">${data.hinh_thuc_khen_thuong || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Năm:</span>
+                    <span class="form-value">${data.nam || ''}</span>
+                </div>
+
+                <div class="form-row">
+                    <span class="form-label">Tháng:</span>
+                    <span class="form-value">${data.thang || ''}</span>
+                </div>
+
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-title">NGƯỜI LẬP PHIẾU</div>
+                        <div class="signature-date">${formattedDate}</div>
+                        <div class="signature-name">(Ký tên và đóng dấu)</div>
+                    </div>
+
+                    <div class="signature-box">
+                        <div class="signature-title">PHỤ TRÁCH</div>
+                        <div class="signature-date">${formattedDate}</div>
+                        <div class="signature-name">${data.nguoi_ky_quyet_dinh || '(Ký tên và đóng dấu)'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // In form
+        function printForm() {
+            window.print();
+        }
+
+        // Xuất PDF
+        function exportPDF() {
+            const element = document.querySelector('.container');
+            const buttons = document.querySelector('.buttons');
+            
+            // Ẩn nút khi xuất PDF
+            buttons.style.display = 'none';
+            
+            const opt = {
+                margin: 1,
+                filename: `phieu_khen_thuong_${new Date().getTime()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Hiện lại nút sau khi xuất xong
+                buttons.style.display = 'block';
+            });
+        }
+
+        // Khởi tạo khi trang load
+        document.addEventListener('DOMContentLoaded', function() {
+            const data = getUrlParams();
+            displayForm(data);
+        });
+    </script>
+</body>
+</html>
