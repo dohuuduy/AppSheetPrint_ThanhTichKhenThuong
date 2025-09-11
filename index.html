@@ -507,48 +507,87 @@
             document.getElementById('summaryDetails').innerHTML = summaryHtml;
         }
         
-        // Tải dữ liệu mẫu
+        // Cập nhật thông tin debug
+        function updateDebugInfo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let debugInfo = '<strong>📊 Thông tin URL Parameters:</strong><br>';
+            
+            if (urlParams.toString()) {
+                Array.from(urlParams.entries()).forEach(([key, value]) => {
+                    debugInfo += `• ${key}: ${decodeURIComponent(value)}<br>`;
+                });
+                
+                debugInfo += `<br><strong>📈 Kết quả:</strong><br>`;
+                debugInfo += `• Số bản ghi được tải: ${khenThuongData.length}<br>`;
+                
+                if (khenThuongData.length > 0) {
+                    debugInfo += `• Bản ghi đầu tiên: ${JSON.stringify(khenThuongData[0])}<br>`;
+                }
+            } else {
+                debugInfo += 'Không có tham số URL nào được truyền';
+            }
+            
+            document.getElementById('filterInfo').innerHTML = debugInfo;
+        }
+        
+        // Tải dữ liệu mẫu theo điều kiện lọc
         function loadSampleData() {
-            khenThuongData = [
+            const tu_nam = getURLParameter('tu_nam') || '2023';
+            const den_nam = getURLParameter('den_nam') || '2024';
+            
+            // Tạo dữ liệu mẫu phong phú hơn
+            const allSampleData = [
                 {
-                    id: '1',
-                    so_quyet_dinh: '001/2024/QĐ-UBND',
-                    ngay_quyet_dinh: '15/01/2024',
-                    linh_vuc: 'Giáo dục',
-                    nguoi_duoc_khen_thuong: 'Nguyễn Văn A',
-                    thanh_tich: 'Xuất sắc trong giảng dạy',
-                    hinh_thuc_khen_thuong: 'Bằng khen',
-                    nam: '2024'
+                    id: '1', so_quyet_dinh: '001/2024/QĐ-UBND', ngay_quyet_dinh: '15/01/2024',
+                    linh_vuc: 'Giáo dục', nguoi_duoc_khen_thuong: 'Nguyễn Văn An - GV Toán',
+                    thanh_tich: 'Đạt giải nhất cuộc thi giáo viên dạy giỏi cấp tỉnh năm 2024',
+                    hinh_thuc_khen_thuong: 'Bằng khen', nam: '2024'
                 },
                 {
-                    id: '2',
-                    so_quyet_dinh: '002/2024/QĐ-UBND',
-                    ngay_quyet_dinh: '20/02/2024',
-                    linh_vuc: 'Y tế',
-                    nguoi_duoc_khen_thuong: 'Trần Thị B',
-                    thanh_tich: 'Tận tâm chăm sóc bệnh nhân',
-                    hinh_thuc_khen_thuong: 'Giấy khen',
-                    nam: '2024'
+                    id: '2', so_quyet_dinh: '002/2024/QĐ-UBND', ngay_quyet_dinh: '20/02/2024',
+                    linh_vuc: 'Y tế', nguoi_duoc_khen_thuong: 'Trần Thị Bình - Bác sĩ',
+                    thanh_tich: 'Tận tâm chăm sóc bệnh nhân trong đại dịch COVID-19',
+                    hinh_thuc_khen_thuong: 'Giấy khen', nam: '2024'
                 },
                 {
-                    id: '3',
-                    so_quyet_dinh: '003/2023/QĐ-UBND',
-                    ngay_quyet_dinh: '10/12/2023',
-                    linh_vuc: 'Nông nghiệp',
-                    nguoi_duoc_khen_thuong: 'Lê Văn C',
-                    thanh_tich: 'Ứng dụng công nghệ cao',
-                    hinh_thuc_khen_thuong: 'Bằng khen',
-                    nam: '2023'
+                    id: '3', so_quyet_dinh: '015/2023/QĐ-UBND', ngay_quyet_dinh: '10/12/2023',
+                    linh_vuc: 'Nông nghiệp', nguoi_duoc_khen_thuong: 'Lê Văn Cường - Nông dân',
+                    thanh_tich: 'Ứng dụng thành công công nghệ cao trong trồng trọt',
+                    hinh_thuc_khen_thuong: 'Bằng khen', nam: '2023'
+                },
+                {
+                    id: '4', so_quyet_dinh: '008/2023/QĐ-UBND', ngay_quyet_dinh: '05/08/2023',
+                    linh_vuc: 'Công nghiệp', nguoi_duoc_khen_thuong: 'Phạm Thị Dung - Công nhân',
+                    thanh_tich: 'Sáng kiến cải tiến kỹ thuật tiết kiệm 200 triệu/năm',
+                    hinh_thuc_khen_thuong: 'Giấy khen', nam: '2023'
+                },
+                {
+                    id: '5', so_quyet_dinh: '003/2022/QĐ-UBND', ngay_quyet_dinh: '15/03/2022',
+                    linh_vuc: 'Văn hóa', nguoi_duoc_khen_thuong: 'Hoàng Văn Em - Nghệ sĩ',
+                    thanh_tich: 'Giữ gìn và phát huy văn hóa dân tộc',
+                    hinh_thuc_khen_thuong: 'Bằng khen', nam: '2022'
                 }
             ];
             
+            // Lọc dữ liệu theo điều kiện năm
+            const tu_nam_int = parseInt(tu_nam);
+            const den_nam_int = parseInt(den_nam);
+            
+            khenThuongData = allSampleData.filter(item => {
+                const nam = parseInt(item.nam);
+                return nam >= tu_nam_int && nam <= den_nam_int;
+            });
+            
             // Giả lập điều kiện lọc
-            updateFilterInfo('2023', '2024');
+            updateFilterInfo(tu_nam, den_nam);
             
             renderTable();
             updateSummary();
             
-            document.getElementById('filterInfo').innerHTML = 'Đã tải dữ liệu mẫu với 3 bản ghi (2023-2024)';
+            document.getElementById('filterInfo').innerHTML = 
+                `✅ Đã tải ${khenThuongData.length} bản ghi dữ liệu mẫu<br>
+                 📅 Điều kiện lọc: năm ${tu_nam} - ${den_nam}<br>
+                 📊 Tổng dữ liệu mẫu có sẵn: ${allSampleData.length} bản ghi`;
         }
         
         // Xóa dữ liệu
