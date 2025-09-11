@@ -297,9 +297,17 @@
             const dataParam = getURLParameter('data');
             const tu_nam = getURLParameter('tu_nam');
             const den_nam = getURLParameter('den_nam');
+            const use_api = getURLParameter('use_api');
+            const appsheet_app_id = getURLParameter('appsheet_app_id');
             
             // Cập nhật thông tin điều kiện lọc
             updateFilterInfo(tu_nam, den_nam);
+            
+            // Nếu sử dụng AppSheet API
+            if (use_api === 'true' && appsheet_app_id && tu_nam && den_nam) {
+                loadDataFromAppSheetAPI(appsheet_app_id, tu_nam, den_nam);
+                return;
+            }
             
             if (dataParam) {
                 try {
@@ -329,8 +337,65 @@
             }
         }
         
-        // Hàm parse từ các tham số riêng lẻ
+        // Hàm mô phỏng gọi AppSheet API
+        function loadDataFromAppSheetAPI(appId, tu_nam, den_nam) {
+            document.getElementById('filterInfo').innerHTML = 
+                `Đang tải dữ liệu từ AppSheet API với điều kiện: năm ${tu_nam} - ${den_nam}...`;
+            
+            // Mô phỏng API call (thực tế sẽ cần AppSheet API key và endpoint)
+            setTimeout(() => {
+                // Dữ liệu mẫu mô phỏng từ API
+                const mockApiData = [
+                    {
+                        id: '1',
+                        so_quyet_dinh: '001/2024/QĐ-UBND',
+                        ngay_quyet_dinh: '15/01/2024',
+                        linh_vuc: 'Giáo dục',
+                        nguoi_duoc_khen_thuong: 'Nguyễn Văn A',
+                        thanh_tich: 'Xuất sắc trong giảng dạy',
+                        hinh_thuc_khen_thuong: 'Bằng khen',
+                        nam: '2024'
+                    },
+                    {
+                        id: '2',
+                        so_quyet_dinh: '002/2024/QĐ-UBND',
+                        ngay_quyet_dinh: '20/02/2024',
+                        linh_vuc: 'Y tế',
+                        nguoi_duoc_khen_thuong: 'Trần Thị B',
+                        thanh_tich: 'Tận tâm chăm sóc bệnh nhân',
+                        hinh_thuc_khen_thuong: 'Giấy khen',
+                        nam: '2024'
+                    }
+                ];
+                
+                // Lọc theo điều kiện năm
+                const tu_nam_int = parseInt(tu_nam);
+                const den_nam_int = parseInt(den_nam);
+                
+                khenThuongData = mockApiData.filter(item => {
+                    const nam = parseInt(item.nam);
+                    return nam >= tu_nam_int && nam <= den_nam_int;
+                });
+                
+                renderTable();
+                updateSummary();
+                
+                document.getElementById('filterInfo').innerHTML = 
+                    `Đã tải ${khenThuongData.length} bản ghi từ AppSheet API với điều kiện: năm ${tu_nam} - ${den_nam}`;
+            }, 1000);
+        }
+        
+        // Hàm parse từ các tham số riêng lẻ hoặc từ AppSheet
         function parseIndividualParams(tu_nam, den_nam) {
+            // Kiểm tra nếu chỉ có điều kiện lọc từ AppSheet
+            const action = getURLParameter('action');
+            if (action === 'load_filtered_data' && tu_nam && den_nam) {
+                // Hiển thị thông báo chờ tải dữ liệu
+                document.getElementById('filterInfo').innerHTML = 
+                    `Sẵn sàng tải dữ liệu với điều kiện lọc: năm ${tu_nam} - ${den_nam}. Vui lòng sử dụng nút "Tải Dữ Liệu Mẫu" hoặc truyền dữ liệu qua tham số.`;
+                return;
+            }
+            
             const singleRecord = {};
             const params = [
                 'id', 'linh_vuc', 'so_quyet_dinh', 'ngay_quyet_dinh', 
